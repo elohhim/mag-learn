@@ -5,35 +5,59 @@ import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits import mplot3d
 
-
 plt.style.use('ggplot')
 use_contour = False
 
 
 def get_damped_sine_wave_fun(a=1, lambda_=0.1, omega=1, phi=0):
     """Returns damped sine wave function."""
+
     def damped_sine_wave(X):
         """exp(-lambda*x") * cos(omega *x * phi)"""
         return a * np.exp(-1 * lambda_ * X) * np.cos(omega * X + phi)
+
     return damped_sine_wave
 
 
-def get_3d_sine_fun(a=1, b=1):
-    """Returns 3d sine like function."""
-    def _3d_sine_fun(X):
+
+def fun_3d(fun):
+    def _fun_3d(X):
         x, y = X[:, 0], X[:, 1]
-        z = (a * np.exp(-0.1 * x) * np.cos(x) -
-             b * np.exp(-0.1 * y) * np.cos(y))
+        z = fun(x, y)
         return z.reshape(-1, 1)
-    return _3d_sine_fun
+
+    return _fun_3d
+
+
+def get_half_sphere_fun(r=1):
+    """Returns 3d half sphere function."""
+
+    @fun_3d
+    def _half_sphere_fun(x, y):
+        return np.sqrt(r - np.power(x, 2) - np.power(y, 2))
+
+    return _half_sphere_fun
+
+
+def get_circular_vibration_fun(a=1, lambda_=0.1, omega=1, phi=0):
+    """Return circular vibration function."""
+
+    @fun_3d
+    def _circular_vibration_fun(x, y):
+        circle = np.sqrt(x ** 2 + y ** 2)
+        return a * np.exp(-1 * lambda_ * circle) * np.cos(omega * circle + phi)
+
+    return _circular_vibration_fun
+
 
 def get_rosenbrock_fun(a=1, b=100):
     """Returns Rosenbrock function."""
-    def rosenbrock(X):
+
+    @fun_3d
+    def rosenbrock(x, y):
         """(a - x)^2 + b(y - x^2)^2"""
-        x, y = X[:, 0], X[:, 1]
-        z = (a - x) ** 2 + b * (y - x ** 2) ** 2
-        return z.reshape(-1, 1)
+        return (a - x) ** 2 + b * (y - x ** 2) ** 2
+
     return rosenbrock
 
 
@@ -56,7 +80,7 @@ def plot_2d_data(X, Y, plot_type):
     call(X, Y, **plot_kwargs)
 
 
-def plot_3d_data(X, Y, plot_type, ax = None):
+def plot_3d_data(X, Y, plot_type, ax=None):
     """Plots 3D data."""
     xs = np.hsplit(X, 2)
     if ax is None:
@@ -108,6 +132,19 @@ def generate_fun_samples(fun, *ranges):
     return X, Y
 
 
+def generate_random_fun_samples(fun, samples, *ranges, noise=False):
+    """Generates random function samples in given ranges."""
+    xs = [np.random.uniform(lo, hi, samples).T for lo, hi in ranges]
+    X = np.column_stack(xs)
+    Y = fun(X)
+    mask = np.isfinite(Y).ravel()
+    X = X[mask]
+    Y = Y[mask]
+    if noise:
+        Y += np.random.random_sample(Y.shape) / 20
+    return X, Y
+
+
 def generate_fun_data(fun_def, dump=False, output_dir='', plot=False,
                       plot_show=False):
     """Generates input data for one function."""
@@ -118,7 +155,7 @@ def generate_fun_data(fun_def, dump=False, output_dir='', plot=False,
         dump_fun_data(Xs, Y, output_dir, name + '.csv')
     if plot:
         fig = plt.figure()
-        plot_fun(fun, *[(lo, hi, step*10) for lo, hi, step in ranges])
+        plot_fun(fun, *[(lo, hi, step * 10) for lo, hi, step in ranges])
         plot_data(Xs, Y, 'scatter')
         save_plot(fig, output_dir, name + '.png')
         if plot_show:
@@ -134,7 +171,8 @@ def generate_data(functions):
 
 R_FUN = ('damped_sine_wave_10', get_damped_sine_wave_fun(), (0, 10, 10))
 
-R_FUN_1M = ('damped_sine_wave_1m', get_damped_sine_wave_fun(), (0, 10, 1_000_000))
+R_FUN_1M = (
+    'damped_sine_wave_1m', get_damped_sine_wave_fun(), (0, 10, 1_000_000))
 
 R2_FUN = ('rosenbrock', get_rosenbrock_fun(1, 100), (-2, 2, 11), (-1, 3, 11))
 
@@ -152,4 +190,3 @@ def run():
 
 if __name__ == '__main__':
     run()
-
