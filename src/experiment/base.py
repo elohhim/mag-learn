@@ -20,7 +20,7 @@ ExperimentContext = namedtuple("ExperimentContext",
                                ("dataset x_scaler y_scaler x_scaled y_scaled "
                                 "model epsilon"))
 
-ExperimentResult = namedtuple("ExperimentResult", "time history")
+ExperimentResult = namedtuple("ExperimentResult", "model time history")
 
 
 class Experiment(ABC):
@@ -101,19 +101,70 @@ class Experiment(ABC):
 
     def plot_results(self, ctx: ExperimentContext, output_path):
         """Plots experiment results."""
-        dataset = ctx.dataset
+        is3d = ctx.dataset.x.shape[1] == 2 and not use_contour
+        projection = '3d' if is3d else None
+        self.plot_aggregate(ctx, projection, output_path)
+        self.plot_function(ctx, projection, output_path)
+        self.plot_approximation(ctx, projection, output_path)
+        self.plot_absolute_error(ctx, projection, output_path)
+        self.plot_relative_error(ctx, projection, output_path)
+
+    def plot_aggregate(self, ctx, projection, output_path):
         fig = plt.figure()
-        projection = '3d' if dataset.x.shape[
-                                 1] == 2 and not use_contour else None
         ax = plt.subplot(3, 1, 1, projection=projection)
-        plot_ranges = [(lo, hi, 100) for lo, hi in dataset.ranges]
-        plot_fun(dataset.fun, *plot_ranges, ax=ax)
+        plot_ranges = [(lo, hi, 100) for lo, hi in ctx.dataset.ranges]
+        plot_fun(ctx.dataset.fun, *plot_ranges, ax=ax)
         ax = plt.subplot(3, 1, 2, projection=projection)
         plot_fun(lambda x: self._simulate(ctx, x), *plot_ranges, ax=ax)
         ax = plt.subplot(3, 1, 3, projection=projection)
-        plot_fun(lambda x: (dataset.fun(x) - self._simulate(ctx, x)),
+        plot_fun(lambda x: (ctx.dataset.fun(x) - self._simulate(ctx, x)),
                  *plot_ranges, ax=ax)
-        fig.savefig(f'{output_path}.png', dpi=600)
+        fig.savefig(f'{output_path}_aggregate.png', dpi=600)
+        plt.close(fig)
+
+    def plot_function(self, ctx, projection, output_path):
+        fig = plt.figure()
+        ax = plt.subplot(1, 1, 1, projection=projection)
+        plot_ranges = [(lo, hi, 100) for lo, hi in ctx.dataset.ranges]
+        plot_fun(ctx.dataset.fun, *plot_ranges, ax=ax)
+        fig.savefig(f'{output_path}_function.png', dpi=600)
+        plt.close(fig)
+
+    def plot_approximation(self, ctx, projection, output_path):
+        fig = plt.figure()
+        ax = plt.subplot(1, 1, 1, projection=projection)
+        plot_ranges = [(lo, hi, 100) for lo, hi in ctx.dataset.ranges]
+        plot_fun(lambda x: self._simulate(ctx, x), *plot_ranges, ax=ax)
+        fig.savefig(f'{output_path}_approximation.png', dpi=600)
+        plt.close(fig)
+
+    def plot_absolute_error(self, ctx, projection, output_path):
+        fig = plt.figure()
+        ax = plt.subplot(1, 1, 1, projection=projection)
+        plot_ranges = [(lo, hi, 100) for lo, hi in ctx.dataset.ranges]
+
+        def absolute_error(x):
+            real = ctx.dataset.fun(x)
+            approximation = self._simulate(ctx, x)
+            return real - approximation
+
+        plot_fun(absolute_error, *plot_ranges, ax=ax)
+        fig.savefig(f'{output_path}_absolute_error.png', dpi=600)
+        plt.close(fig)
+
+    def plot_relative_error(self, ctx, projection, output_path):
+        fig = plt.figure()
+        ax = plt.subplot(1, 1, 1, projection=projection)
+        plot_ranges = [(lo, hi, 100) for lo, hi in ctx.dataset.ranges]
+
+        def relative_error(x):
+            real = ctx.dataset.fun(x)
+            approximation = self._simulate(ctx, x)
+            return np.abs((real - approximation) / real)
+
+        plot_fun(relative_error, *plot_ranges, ax=ax)
+        fig.savefig(f'{output_path}_relative_error.png', dpi=600)
+        plt.close(fig)
 
     @staticmethod
     def create_output_dir():
