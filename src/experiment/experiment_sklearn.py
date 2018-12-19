@@ -14,10 +14,10 @@ class SklearnExperiment(Experiment):
                             max_iter=MAX_EPOCHS,
                             activation='relu',
                             solver='adam',
-                            learning_rate='adaptive')
+                            learning_rate='adaptive',)
 
     def train(self, ctx: ExperimentContext):
-        ctx.model.fit(ctx.x_scaled, ctx.y_scaled.ravel())
+        ctx.model.fit(ctx.x_scaled, ctx.y_scaled.ravel(), )
 
     def simulate(self, ctx: ExperimentContext, x: np.array):
         return ctx.model.predict(x).reshape(-1, 1)
