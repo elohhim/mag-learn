@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 from torch.optim import Adam
+from torch.utils.data import DataLoader, TensorDataset
 
 from experiment.base import Experiment
 
@@ -10,8 +11,9 @@ MAX_EPOCHS = 1000
 class PyTorchExperiment(Experiment):
     tool_name = "pytorch"
 
-    def __init__(self):
+    def __init__(self, batch_size='auto'):
         super().__init__()
+        self._batch_size = batch_size
 
     def create_model(self, dataset):
         ins = dataset.x.shape[1]
@@ -33,18 +35,26 @@ class PyTorchExperiment(Experiment):
         criterion = nn.MSELoss()
         x_train = torch.from_numpy(ctx.x_scaled).float()
         y_train = torch.from_numpy(ctx.y_scaled).float()
+        batch_size = x_train.shape[0] if self._batch_size == 'auto' else self._batch_size
+        dataset = TensorDataset(x_train, y_train)
+        dataloader = DataLoader(dataset, batch_size)
 
         ctx.model.train()
+
         for epoch in range(1, MAX_EPOCHS + 1):
-            optimizer.zero_grad()
-            y_pred = ctx.model.forward(x_train)
-            loss = criterion(y_pred, y_train)
-            loss.backward()
-            optimizer.step()
-            if epoch % 100 == 0:
+            loss = 1
+            for x_batch, y_batch in dataloader:
+                optimizer.zero_grad()
+                y_pred = ctx.model.forward(x_batch)
+                loss = criterion(y_pred, y_batch)
+                loss.backward()
+                optimizer.step()
+            if epoch % 10 == 0:
                 print(f"Epoch #{epoch} Loss: {loss.item()}")
             if loss < ctx.epsilon:
+                f"Epoch {epoch}: early stopping. Loss: {loss}"
                 break
+
         ctx.model.eval()
 
     def simulate(self, ctx, x):
@@ -53,4 +63,4 @@ class PyTorchExperiment(Experiment):
 
 
 if __name__ == '__main__':
-    PyTorchExperiment().run()
+    PyTorchExperiment(batch_size=100).run()

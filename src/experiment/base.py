@@ -9,8 +9,8 @@ import numpy as np
 from sklearn import preprocessing
 
 from experiment.data import use_contour, plot_fun, get_damped_sine_wave_fun, \
-    generate_fun_samples, generate_random_fun_samples, plot_data, \
-    get_rosenbrock_fun, get_half_sphere_fun, get_circular_vibration_fun
+    generate_random_fun_samples, plot_data, get_rosenbrock_fun, \
+    get_circular_vibration_fun
 from experiment.misc import timeit
 
 ExperimentDataset = namedtuple("ExperimentDataset",
@@ -19,6 +19,8 @@ ExperimentDataset = namedtuple("ExperimentDataset",
 ExperimentContext = namedtuple("ExperimentContext",
                                ("dataset x_scaler y_scaler x_scaled y_scaled "
                                 "model epsilon"))
+
+ExperimentResult = namedtuple("ExperimentResult", "time history")
 
 
 class Experiment(ABC):
@@ -84,11 +86,11 @@ class Experiment(ABC):
         )
         fun_definitions.extend(
             ('rosenbrock', get_rosenbrock_fun(), n, (-2, 2), (-1, 3))
-            for n in [100, 1_000, 10_000])
+            for n in [100, 10_000, 1_000_000])
         fun_definitions.extend(
             ('circular_vibration', get_circular_vibration_fun(), n,
              (-3 * math.pi, 3 * math.pi), (-3 * math.pi, 3 * math.pi))
-            for n in [100, 1_000, 10_000])
+            for n in [100, 10_000, 1_000_000])
         datasets = []
         for fun_name, fun, samples, *ranges in fun_definitions:
             x, y = generate_random_fun_samples(fun, samples, *ranges,
