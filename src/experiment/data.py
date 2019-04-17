@@ -1,4 +1,5 @@
 import itertools
+import math
 import os
 
 import matplotlib.pyplot as plt
@@ -91,7 +92,7 @@ def plot_3d_data(X, Y, plot_type, ax=None):
         if use_contour:
             ax.tricontour(*flatten_xs, flatten_y, colors='k')
             cs = ax.tricontourf(*flatten_xs, flatten_y, cmap='viridis',
-                                alpha=0.8)
+                                alpha=1)
             plt.colorbar(cs)
 
         else:
@@ -156,8 +157,8 @@ def generate_fun_data(fun_def, dump=False, output_dir='', plot=False,
     if plot:
         fig = plt.figure()
         plot_fun(fun, *[(lo, hi, step * 10) for lo, hi, step in ranges])
-        plot_data(Xs, Y, 'scatter')
-        save_plot(fig, output_dir, name + '.png')
+        #plot_data(Xs, Y, 'scatter')
+        save_plot(fig, output_dir, name + '.pdf')
         if plot_show:
             fig.show()
     return Xs, Y
@@ -169,16 +170,20 @@ def generate_data(functions):
             for i, fun_def in enumerate(functions)]
 
 
-R_FUN = ('damped_sine_wave_10', get_damped_sine_wave_fun(), (0, 10, 10))
+R_FUN = ('damped_sine_wave', get_damped_sine_wave_fun(),
+         (-4 * math.pi, 4 * math.pi, 100))
 
-R_FUN_1M = (
-    'damped_sine_wave_1m', get_damped_sine_wave_fun(), (0, 10, 1_000_000))
+R2_FUN_1 = ('circular_vibration', get_circular_vibration_fun(),
+            (-3 * math.pi, 3 * math.pi, 100),
+            (-3 * math.pi, 3 * math.pi, 100))
 
-R2_FUN = ('rosenbrock', get_rosenbrock_fun(1, 100), (-2, 2, 11), (-1, 3, 11))
+R2_FUN_2 = ('rosenbrock', get_rosenbrock_fun(1, 100), (-2, 2, 100),
+            (-1, 3, 100))
 
 FUNS = [
     R_FUN,
-    R2_FUN
+    R2_FUN_1,
+    R2_FUN_2
 ]
 
 

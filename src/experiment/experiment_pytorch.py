@@ -11,9 +11,10 @@ MAX_EPOCHS = 1000
 class PyTorchExperiment(Experiment):
     tool_name = "pytorch"
 
-    def __init__(self, batch_size='auto'):
+    def __init__(self, batch_size='auto', verbose=0):
         super().__init__()
         self._batch_size = batch_size
+        self._verbose = verbose
 
     def create_model(self, dataset):
         ins = dataset.x.shape[1]
@@ -40,7 +41,7 @@ class PyTorchExperiment(Experiment):
         dataloader = DataLoader(dataset, batch_size)
 
         ctx.model.train()
-
+        loss_history = []
         for epoch in range(1, MAX_EPOCHS + 1):
             loss = 1
             for x_batch, y_batch in dataloader:
@@ -49,13 +50,14 @@ class PyTorchExperiment(Experiment):
                 loss = criterion(y_pred, y_batch)
                 loss.backward()
                 optimizer.step()
-            if epoch % 10 == 0:
+            loss_history.append(loss.item())
+            if self._verbose and epoch % 10 == 0:
                 print(f"Epoch #{epoch} Loss: {loss.item()}")
             if loss < ctx.epsilon:
-                f"Epoch {epoch}: early stopping. Loss: {loss}"
+                f"Epoch {epoch}: early stopping. Loss: {loss.item()}"
                 break
-
         ctx.model.eval()
+        return loss_history
 
     def simulate(self, ctx, x):
         x_torch = torch.from_numpy(x).float()

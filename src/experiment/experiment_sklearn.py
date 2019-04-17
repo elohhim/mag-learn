@@ -18,6 +18,7 @@ class SklearnExperiment(Experiment):
 
     def train(self, ctx: ExperimentContext):
         ctx.model.fit(ctx.x_scaled, ctx.y_scaled.ravel(), )
+        return ctx.model.loss_curve_
 
     def simulate(self, ctx: ExperimentContext, x: np.array):
         return ctx.model.predict(x).reshape(-1, 1)

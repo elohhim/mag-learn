@@ -1,4 +1,3 @@
-from keras.optimizers import Adam
 from keras.callbacks import Callback
 from keras.layers import Dense, Activation
 from keras.models import Sequential
@@ -59,6 +58,7 @@ class KerasExperiment(Experiment):
                              shuffle=False, verbose=0,
                              callbacks=callbacks)
         print(f"Final loss: {hist.history['loss'][-1]}")
+        return hist.history['loss']
 
     def simulate(self, ctx, x):
         return ctx.model.predict(x)
